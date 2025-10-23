@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework 3 Q6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark gray-blue */
+            color: #E5E7EB; /* Light gray */
+            overflow: hidden; /* Hide scrollbars */
+        }
+        .security-lane {
+            border: 1px solid #374151; /* Gray-700 */
+            border-radius: 0.75rem;
+            min-height: 140px;
+            padding: 1.5rem;
+            padding-top: 2.5rem; /* More space for the label */
+            position: relative;
+            transition: background-color 0.3s;
+        }
+        .lane-label {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            padding: 0.25rem 0.75rem;
+            border-top-left-radius: 0.75rem;
+            border-bottom-right-radius: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        .entity {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #374151; /* Gray-700 */
+            border: 1px solid #4B5563; /* Gray-600 */
+            transition: transform 0.5s ease-in-out, background-color 0.3s;
+            min-width: 100px;
+            text-align: center;
+        }
+        .subject {
+            background-color: #3B82F6; /* Blue-500 */
+            border-color: #2563EB; /* Blue-600 */
+            color: white;
+        }
+        .entity-icon {
+            width: 2.5rem; /* 40px */
+            height: 2.5rem; /* 40px */
+            margin-bottom: 0.5rem;
+/*            filter: invert(1);  Invert color to make SVGs white */
+        }
+        .entity .name { font-weight: 600; }
+        .entity .level { font-size: 0.875rem; color: #D1D5DB; /* Gray-300 */ }
+        .entity .current { font-size: 0.75rem; color: #F9FAFB; font-style: italic; }
+
+        /* Flashing animations */
+        @keyframes flash-success {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+            50% { box-shadow: 0 0 10px 3px rgba(34, 197, 94, 0.7); }
+        }
+        @keyframes flash-fail {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            50% { box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.7); }
+        }
+        @keyframes flash-move {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+            50% { box-shadow: 0 0 10px 3px rgba(59, 130, 246, 0.7); }
+        }
+        .flash-success { animation: flash-success 1s ease-in-out; }
+        .flash-fail { animation: flash-fail 1s ease-in-out; }
+        .flash-move { animation: flash-move 1s ease-in-out; }
+
+        /* Control Panel Styles */
+        .control-panel {
+            background-color: #1F2937; /* Gray-800 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+        .panel-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-blue { background-color: #3B82F6; }
+        .btn-blue:hover { background-color: #2563EB; }
+        .btn-green { background-color: #10B981; }
+        .btn-green:hover { background-color: #059669; }
+        .btn-red { background-color: #EF4444; }
+        .btn-red:hover { background-color: #DC2626; }
+        .btn-gray { background-color: #4B5563; }
+        .btn-gray:hover { background-color: #6B7280; }
+
+        .btn-case {
+            background-color: #4B5563;
+            margin: 0.25rem;
+        }
+        .btn-case:hover { background-color: #6B7280; }
+        
+        .btn-custom-case {
+            background-color: #059669;
+            margin: 0.25rem;
+            position: relative;
+        }
+        .btn-custom-case:hover { background-color: #047857; }
+        .btn-custom-case .delete-case {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #EF4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .btn-custom-case .delete-case:hover { opacity: 1; }
+
+        #log-output {
+            background-color: #030712; /* Nearly black */
+            border: 1px solid #374151;
+            height: 200px;
+            font-family: monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log-system { color: #3B82F6; }
+        .log-allow { color: #22C55E; }
+        .log-deny { color: #EF4444; }
+        .log-action { color: #E5E7EB; }
+        .log-info { color: #8B5CF6; }
+
+        #code-editor {
+            background-color: #030712;
+            border: 1px solid #374151;
+            color: #E5E7EB;
+            font-family: monospace;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            resize: vertical;
+        }
+        .dropdown {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            color: white;
+        }
+
+        /* Custom Scrollbar Styles */
+        .custom-scrollbar {
+            scrollbar-width: thin; /* For Firefox */
+            scrollbar-color: #4B5563 #1F2937; /* For Firefox (thumb track) */
+        }
+        /* For Webkit (Chrome, Safari, Edge) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1F2937; /* Gray-800 */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4B5563; /* Gray-600 */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6B7280; /* Gray-500 */
+        }
+    </style>
+</head>
+<body class="p-6 h-screen">
+    <div class="flex flex-col h-full">
+        <header class="text-center mb-4">
+            <h1 class="text-3xl font-bold text-white">Bell-LaPadula (BLP) Case Visualizer</h1>
+            <p class="text-lg text-gray-300">Built for ITIS 6200</p>
+        </header>
+
+        <div class="flex-1 grid grid-cols-3 gap-6 h-[calc(100%-80px)]">
+            <!-- Left Panel: Visualization -->
+            <div id="viz-container" class="col-span-2 h-full flex flex-col gap-2">
+                <!-- Security Lanes will be dynamically generated here -->
+            </div>
+
+            <!-- Right Panel: Controls -->
+            <div class="col-span-1 h-full flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                
+                <!-- Test Cases -->
+                <div class="control-panel">
+                    <h3 class="panel-title">Default Test Cases</h3>
+                    <div id="default-cases-panel" class="flex flex-wrap justify-center">
+                        <!-- Default test case buttons will be generated here -->
+                    </div>
+                    
+                    <h3 class="panel-title mt-4">My Saved Cases</h3>
+                    <div id="custom-cases-panel" class="flex flex-wrap justify-center min-h-[40px]">
+                        <!-- Custom test case buttons will be generated here -->
+                    </div>
+                    
+                    <button id="reset-state" class="btn btn-red w-full mt-4">Reset State</button>
+                </div>
+
+                <!-- Playground -->
+                <div class="control-panel">
+                    <h3 class="panel-title">Playground</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="playground-subject" class="dropdown p-2 rounded-md">
+                            <option value="alice">Alice</option>
+                            <option value="bob">Bob</option>
+                            <option value="eve">Eve</option>
+                        </select>
+                        <select id="playground-object" class="dropdown p-2 rounded-md">
+                            <option value="pub.txt">pub.txt</option>
+                            <option value="emails.txt">emails.txt</option>
+                            <option value="username.txt">username.txt</option>
+                            <option value="password.txt">password.txt</option>
+                        </select>
+                        <button id="playground-read" class="btn btn-green col-span-1">Read</button>
+                        <button id="playground-write" class="btn btn-blue col-span-1">Write</button>
+                    </div>
+                </div>
+
+                <!-- Code Editor -->
+                <div class="control-panel">
+                    <h3 class="panel-title">Code Editor</h3>
+                    <textarea id="code-editor" rows="6" class="mb-2 custom-scrollbar" placeholder="Click a case to load code, or write your own..."></textarea>
+                    <div class="flex gap-2">
+                        <button id="run-code" class="btn btn-green flex-1">Run Code</button>
+                        <button id="save-case" class="btn btn-blue flex-1">Save Custom Case</button>
+                    </div>
+                </div>
+
+                <!-- Log -->
+                <div class="control-panel flex-1 flex flex-col">
+                    <h3 class="panel-title">Log</h3>
+                    <div id="log-output" class="flex-1 rounded-md p-3 overflow-y-auto custom-scrollbar">
+                        <span class="log-system">> System ready. Select a test case or use the playground.</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS ---
+        const SECURITY_LEVELS = { "U": 0, "C": 1, "S": 2, "TS": 3 };
+        const LEVEL_NAMES = { 0: "U", 1: "C", 2: "S", 3: "TS" };
+        const LANE_CONFIG = {
+            "TS": { label: "Top Secret", color: "bg-red-800", text: "text-red-100", labelColor: "bg-red-600" },
+            "S":  { label: "Secret", color: "bg-purple-800", text: "text-purple-100", labelColor: "bg-purple-600" },
+            "C":  { label: "Confidential", color: "bg-blue-800", text: "text-blue-100", labelColor: "bg-blue-600" },
+            "U":  { label: "Unclassified", color: "bg-green-800", text: "text-green-100", labelColor: "bg-green-600" }
+        };
+
+        const TEST_CASES = [
+            { id: 1, name: "Case #1", code: 'read("alice", "emails.txt")', actions: [['read', 'alice', 'emails.txt']] },
+            { id: 2, name: "Case #2", code: 'read("alice", "password.txt")', actions: [['read', 'alice', 'password.txt']] },
+            { id: 3, name: "Case #3", code: 'read("eve", "pub.txt")', actions: [['read', 'eve', 'pub.txt']] },
+            { id: 4, name: "Case #4", code: 'read("eve", "emails.txt")', actions: [['read', 'eve', 'emails.txt']] },
+            { id: 5, name: "Case #5", code: 'read("bob", "password.txt")', actions: [['read', 'bob', 'password.txt']] },
+            { id: 6, name: "Case #6", code: `read("alice", "emails.txt")\nwrite("alice", "pub.txt")`, actions: [['read', 'alice', 'emails.txt'], ['write', 'alice', 'pub.txt']] },
+            { id: 7, name: "Case #7", code: `read("alice", "emails.txt")\nwrite("alice", "password.txt")`, actions: [['read', 'alice', 'emails.txt'], ['write', 'alice', 'password.txt']] },
+            { id: 8, name: "Case #8", code: `read("alice", "emails.txt")\nwrite("alice", "emails.txt")\nread("alice", "username.txt")\nwrite("alice", "emails.txt")`, actions: [['read', 'alice', 'emails.txt'], ['write', 'alice', 'emails.txt'], ['read', 'alice', 'username.txt'], ['write', 'alice', 'emails.txt']] },
+            { id: 9, name: "Case #9", code: `read("alice", "emails.txt")\nwrite("alice", "username.txt")\nread("alice", "password.txt")\nwrite("alice", "emails.txt")`, actions: [['read', 'alice', 'emails.txt'], ['write', 'alice', 'username.txt'], ['read', 'alice', 'password.txt'], ['write', 'alice', 'emails.txt']] },
+            { id: 10, name: "Case #10", code: `read("alice", "pub.txt")\nwrite("alice", "emails.txt")\nread("bob", "emails.txt")`, actions: [['read', 'alice', 'pub.txt'], ['write', 'alice', 'emails.txt'], ['read', 'bob', 'emails.txt']] },
+            { id: 11, name: "Case #11", code: `read("alice", "pub.txt")\nwrite("alice", "username.txt")\nread("bob", "username.txt")`, actions: [['read', 'alice', 'pub.txt'], ['write', 'alice', 'username.txt'], ['read', 'bob', 'username.txt']] },
+            { id: 12, name: "Case #12", code: `read("alice", "pub.txt")\nwrite("alice", "password.txt")\nread("bob", "password.txt")`, actions: [['read', 'alice', 'pub.txt'], ['write', 'alice', 'password.txt'], ['read', 'bob', 'password.txt']] },
+            { id: 13, name: "Case #13", code: `read("alice", "pub.txt")\nwrite("alice", "emails.txt")\nread("eve", "emails.txt")`, actions: [['read', 'alice', 'pub.txt'], ['write', 'alice', 'emails.txt'], ['read', 'eve', 'emails.txt']] },
+            { id: 14, name: "Case #14", code: `read("alice", "emails.txt")\nwrite("alice", "pub.txt")\nread("eve", "pub.txt")`, actions: [['read', 'alice', 'emails.txt'], ['write', 'alice', 'pub.txt'], ['read', 'eve', 'pub.txt']] },
+            { id: 15, name: "Case #15", code: `setLevel("alice", "S")\nread("alice", "username.txt")`, actions: [['setLevel', 'alice', 'S'], ['read', 'alice', 'username.txt']] },
+            { id: 16, name: "Case #16", code: `read("alice", "emails.txt")\nsetLevel("alice", "U")\nwrite("alice", "pub.txt")\nread("eve", "pub.txt")`, actions: [['read', 'alice', 'emails.txt'], ['setLevel', 'alice', 'U'], ['write', 'alice', 'pub.txt'], ['read', 'eve', 'pub.txt']] },
+            { id: 17, name: "Case #17", code: `read("alice", "username.txt")\nsetLevel("alice", "C")\nwrite("alice", "emails.txt")\nread("eve", "emails.txt")`, actions: [['read', 'alice', 'username.txt'], ['setLevel', 'alice', 'C'], ['write', 'alice', 'emails.txt'], ['read', 'eve', 'emails.txt']] },
+            { id: 18, name: "Optional", name: "Optional Case", code: `// Optional Side-Channel Demo\nread("eve", "pub.txt")\nread("eve", "emails.txt")`, actions: [['read', 'eve', 'pub.txt'], ['read', 'eve', 'emails.txt']] },
+        ];
+
+        // --- STATE ---
+        let state = {};
+        let customCases = [];
+        const logOutput = document.getElementById('log-output');
+        const editor = document.getElementById('code-editor');
+
+        function getInitialState() {
+            return {
+                subjects: {
+                    "alice": { name: "Alice", max_level: "S", current_level: "U" },
+                    "bob": { name: "Bob", max_level: "C", current_level: "C" },
+                    "eve": { name: "Eve", max_level: "U", current_level: "U" }
+                },
+                objects: {
+                    "pub.txt": { name: "pub.txt", level: "U" },
+                    "emails.txt": { name: "emails.txt", level: "C" },
+                    "username.txt": { name: "username.txt", level: "S" },
+                    "password.txt": { name: "password.txt", level: "TS" }
+                }
+            };
+        }
+        
+        // --- LOCAL STORAGE ---
+        function loadStateFromStorage() {
+            const savedCases = localStorage.getItem('blpCustomCases');
+            if (savedCases) {
+                customCases = JSON.parse(savedCases);
+            } else {
+                customCases = [];
+            }
+        }
+        
+        function saveStateToStorage() {
+            localStorage.setItem('blpCustomCases', JSON.stringify(customCases));
+        }
+
+        // --- BLP MODEL LOGIC ---
+        const BLP_MODEL = {
+            read: (pid, oid) => {
+                const subject = state.subjects[pid];
+                const object = state.objects[oid];
+                if (!subject || !object) return logMessage(`> ERROR: Unknown subject or object.`, 'log-deny');
+
+                const subj_curr = SECURITY_LEVELS[subject.current_level];
+                const subj_max = SECURITY_LEVELS[subject.max_level];
+                const obj_lvl = SECURITY_LEVELS[object.level];
+
+                logMessage(`> ${pid} attempts to read ${oid}...`, 'log-action');
+
+                if (obj_lvl <= subj_curr) {
+                    logMessage(`> ALLOW: obj_lvl (${object.level}) <= subj_curr (${subject.current_level}).`, 'log-allow');
+                    flashEntity(pid);
+                    flashEntity(oid);
+                    return true;
+                }
+                
+                if (subj_curr < obj_lvl && obj_lvl <= subj_max) {
+                    logMessage(`> ALLOW: obj_lvl (${object.level}) > subj_curr (${subject.current_level}), but <= subj_max (${subject.max_level}).`, 'log-allow');
+                    logMessage(`> INFO: ${pid}'s current_level raised to ${object.level}.`, 'log-info');
+                    subject.current_level = object.level;
+                    flashEntity(pid, 'flash-move');
+                    flashEntity(oid);
+                    renderState();
+                    return true;
+                }
+                
+                if (obj_lvl > subj_max) {
+                    logMessage(`> DENY: "No Read Up" rule violation. obj_lvl (${object.level}) > subj_max (${subject.max_level}).`, 'log-deny');
+                    flashEntity(pid, 'flash-fail');
+                    flashEntity(oid, 'flash-fail');
+                    return false;
+                }
+            },
+            write: (pid, oid) => {
+                const subject = state.subjects[pid];
+                const object = state.objects[oid];
+                if (!subject || !object) return logMessage(`> ERROR: Unknown subject or object.`, 'log-deny');
+
+                const subj_curr = SECURITY_LEVELS[subject.current_level];
+                const obj_lvl = SECURITY_LEVELS[object.level];
+
+                logMessage(`> ${pid} attempts to write to ${oid}...`, 'log-action');
+
+                if (subj_curr <= obj_lvl) {
+                    logMessage(`> ALLOW: subj_curr (${subject.current_level}) <= obj_lvl (${object.level}).`, 'log-allow');
+                    flashEntity(pid);
+                    flashEntity(oid);
+                    return true;
+                } else {
+                    logMessage(`> DENY: "No Write Down" rule violation. subj_curr (${subject.current_level}) > obj_lvl (${object.level}).`, 'log-deny');
+                    flashEntity(pid, 'flash-fail');
+                    flashEntity(oid, 'flash-fail');
+                    return false;
+                }
+            },
+            setLevel: (pid, new_level) => {
+                const subject = state.subjects[pid];
+                if (!subject) return logMessage(`> ERROR: Unknown subject.`, 'log-deny');
+                
+                const subj_curr = SECURITY_LEVELS[subject.current_level];
+                const subj_max = SECURITY_LEVELS[subject.max_level];
+                const new_lvl = SECURITY_LEVELS[new_level];
+                
+                if (new_lvl === undefined) {
+                    logMessage(`> DENY: Invalid security level "${new_level}".`, 'log-deny');
+                    flashEntity(pid, 'flash-fail');
+                    return false;
+                }
+
+                logMessage(`> ${pid} attempts to change level from ${subject.current_level} to ${new_level}...`, 'log-action');
+
+                if (new_lvl < subj_curr) {
+                    logMessage(`> DENY: Cannot lower current_level (${subject.current_level} to ${new_level}).`, 'log-deny');
+                    flashEntity(pid, 'flash-fail');
+                    return false;
+                }
+                if (new_lvl > subj_max) {
+                    logMessage(`> DENY: Cannot set new_level (${new_level}) > max_level (${subject.max_level}).`, 'log-deny');
+                    flashEntity(pid, 'flash-fail');
+                    return false;
+                }
+                
+                logMessage(`> ALLOW: Level changed to ${new_level}.`, 'log-allow');
+                subject.current_level = new_level;
+                flashEntity(pid, 'flash-move');
+                renderState();
+                return true;
+            }
+        };
+
+        // --- RENDERING ---
+        function renderState() {
+            const vizContainer = document.getElementById('viz-container');
+            vizContainer.innerHTML = ''; // Clear container
+
+            // Create lanes
+            const lanes = {};
+            ['TS', 'S', 'C', 'U'].forEach(level => {
+                const config = LANE_CONFIG[level];
+                const lane = document.createElement('div');
+                lane.id = `lane-${level}`;
+                lane.className = `security-lane ${config.color} ${config.text} flex-1 flex items-center gap-4`;
+                
+                const label = document.createElement('span');
+                label.className = `lane-label ${config.labelColor} text-white`;
+                label.textContent = config.label;
+                lane.appendChild(label);
+                
+                vizContainer.appendChild(lane);
+                lanes[level] = lane;
+            });
+
+            // Place subjects
+            for (const [id, subject] of Object.entries(state.subjects)) {
+                const el = createSubjectElement(id, subject);
+                lanes[subject.current_level].appendChild(el);
+            }
+
+            // Place objects
+            for (const [id, object] of Object.entries(state.objects)) {
+                const el = createObjectElement(id, object);
+                lanes[object.level].appendChild(el);
+            }
+        }
+
+        function createSubjectElement(id, subject) {
+            const el = document.createElement('div');
+            el.id = `entity-${id}`;
+            el.className = 'entity subject';
+            
+            // Construct the image source based on the subject ID
+            const imgSrc = `${id}.svg`; // Assumes alice.svg, bob.svg, eve.svg are in the root
+            
+            el.innerHTML = `
+                <img class="entity-icon" src="${imgSrc}" alt="${subject.name} icon">
+                <span class="name">${subject.name}</span>
+                <span class="level">(Max: ${subject.max_level})</span>
+                <span class="current">Current: ${subject.current_level}</span>
+            `;
+            return el;
+        }
+        
+        function createObjectElement(id, object) {
+            const el = document.createElement('div');
+            el.id = `entity-${id}`;
+            el.className = 'entity';
+            el.innerHTML = `
+                <svg class="entity-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="currentColor">
+                    <path d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 119L239 0V128h145z"/>
+                </svg>
+                <span class="name">${object.name}</span>
+                <span class="level">Level: ${object.level}</span>
+            `;
+            return el;
+        }
+        
+        // Removed getIconData function as it's no longer needed
+
+        function flashEntity(id, flashClass = 'flash-success') {
+            const el = document.getElementById(`entity-${id}`);
+            if (el) {
+                el.classList.remove('flash-success', 'flash-fail', 'flash-move');
+                // Force reflow to restart animation
+                void el.offsetWidth;
+                el.classList.add(flashClass);
+            }
+        }
+
+        // --- LOGGING ---
+        function logMessage(message, type = 'log-action') {
+            const line = document.createElement('div');
+            line.textContent = message;
+            line.className = type;
+            logOutput.appendChild(line);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        function clearLog() {
+            logOutput.innerHTML = '';
+        }
+
+        // --- EVENT HANDLERS & ACTIONS ---
+        function resetState() {
+            state = getInitialState();
+            renderState();
+            clearLog();
+            logMessage('> System state has been reset.', 'log-system');
+        }
+        
+        function loadCodeToEditor(code, caseName) {
+            editor.value = code;
+            logMessage(`> Loaded ${caseName}. Click 'Run Code' to execute.`, 'log-system');
+            editor.focus();
+        }
+
+        function runCodeFromEditor() {
+            const code = editor.value;
+            if (!code.trim()) {
+                logMessage("> Editor is empty. Nothing to run.", 'log-deny');
+                return;
+            }
+            
+            resetState();
+            logMessage(`> Executing code from editor...`, 'log-system');
+            
+            const actions = parseCode(code);
+            if (actions.length > 0) {
+                runActions(actions, 0);
+            } else {
+                logMessage("> No valid actions found in editor.", 'log-deny');
+            }
+        }
+        
+        function parseCode(code) {
+            const actions = [];
+            const lines = code.split('\n');
+            const readWriteRegex = /(read|write)\("([^"]+)",\s*"([^"]+)"\)/;
+            const setLevelRegex = /setLevel\("([^"]+)",\s*"([^"]+)"\)/; // Corrected Regex
+
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('//') || trimmedLine === '') {
+                    continue; // Skip comments and empty lines
+                }
+                
+                const readWriteMatch = trimmedLine.match(readWriteRegex);
+                if (readWriteMatch) {
+                    actions.push([readWriteMatch[1], readWriteMatch[2], readWriteMatch[3]]);
+                    continue;
+                }
+                
+                const setLevelMatch = trimmedLine.match(setLevelRegex);
+                if (setLevelMatch) {
+                    actions.push(['setLevel', setLevelMatch[1], setLevelMatch[2]]);
+                    continue;
+                }
+                
+                logMessage(`> Syntax Error: Could not parse line: "${trimmedLine}"`, 'log-deny');
+            }
+            return actions;
+        }
+
+        function runActions(actions, index) {
+            if (index >= actions.length) {
+                logMessage('> --- All actions complete ---', 'log-system');
+                return; // All actions done
+            }
+
+            const [command, arg1, arg2] = actions[index];
+            let success = false;
+
+            if (command === 'read') {
+                success = BLP_MODEL.read(arg1, arg2);
+            } else if (command === 'write') {
+                success = BLP_MODEL.write(arg1, arg2);
+            } else if (command === 'setLevel') {
+                success = BLP_MODEL.setLevel(arg1, arg2);
+            }
+
+            if (!success && command !== 'setLevel') { // setLevel can fail and continue, but R/W failures often stop a sequence
+                // We'll let it continue to match the homework's multi-step failure cases
+                // logMessage(`> Halting due to DENY action.`, 'log-deny');
+                // return; 
+            }
+
+            // Run next action after a delay
+            setTimeout(() => {
+                runActions(actions, index + 1);
+            }, 1200); // 1.2 second delay
+        }
+        
+        function renderDefaultCases() {
+            const panel = document.getElementById('default-cases-panel');
+            panel.innerHTML = '';
+            TEST_CASES.forEach(tc => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-case';
+                button.textContent = tc.name;
+                button.onclick = () => loadCodeToEditor(tc.code, tc.name);
+                panel.appendChild(button);
+            });
+        }
+        
+        function renderCustomCases() {
+            const panel = document.getElementById('custom-cases-panel');
+            panel.innerHTML = '';
+            
+            if (customCases.length === 0) {
+                 panel.innerHTML = `<span class="text-sm text-gray-400 italic">No custom cases saved.</span>`;
+            }
+            
+            customCases.forEach((tc, index) => {
+                const button = document.createElement('button');
+                button.className = 'btn btn-custom-case';
+                button.textContent = tc.name;
+                button.onclick = () => loadCodeToEditor(tc.code, tc.name);
+                
+                const deleteSpan = document.createElement('span');
+                deleteSpan.className = 'delete-case';
+                deleteSpan.innerHTML = '&times;';
+                deleteSpan.title = `Delete "${tc.name}"`;
+                deleteSpan.onclick = (e) => {
+                    e.stopPropagation(); // Prevent loading the case
+                    deleteCustomCase(index, tc.name);
+                };
+                
+                button.appendChild(deleteSpan);
+                panel.appendChild(button);
+            });
+        }
+        
+        function saveCustomCase() {
+            const name = prompt("Enter a name for this test case:", "My Custom Case");
+            if (!name || name.trim() === '') {
+                logMessage("> Save cancelled.", 'log-info');
+                return;
+            }
+            
+            const code = editor.value;
+            if (!code.trim()) {
+                logMessage("> Cannot save an empty case.", 'log-deny');
+                return;
+            }
+            
+            customCases.push({ name: name.trim(), code: code });
+            saveStateToStorage();
+            renderCustomCases();
+            logMessage(`> Saved custom case: "${name}"`, 'log-system');
+        }
+        
+        function deleteCustomCase(index, name) {
+            if (confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
+                customCases.splice(index, 1);
+                saveStateToStorage();
+                renderCustomCases();
+                logMessage(`> Deleted custom case: "${name}"`, 'log-system');
+            }
+        }
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // Setup initial state
+            resetState();
+            
+            // Load custom cases from storage
+            loadStateFromStorage();
+            
+            // Render all UI elements
+            renderDefaultCases();
+            renderCustomCases();
+
+            // --- Bind Control Panel ---
+            document.getElementById('reset-state').onclick = resetState;
+            document.getElementById('run-code').onclick = runCodeFromEditor;
+            document.getElementById('save-case').onclick = saveCustomCase;
+            
+            // --- Bind Playground ---
+            document.getElementById('playground-read').onclick = () => {
+                const subject = document.getElementById('playground-subject').value;
+                const object = document.getElementById('playground-object').value;
+                runActions([['read', subject, object]], 0);
+            };
+            document.getElementById('playground-write').onclick = () => {
+                const subject = document.getElementById('playground-subject').value;
+                const object = document.getElementById('playground-object').value;
+                runActions([['write', subject, object]], 0);
+            };
+        });
+    </script>
+</body>
+</html>
+
